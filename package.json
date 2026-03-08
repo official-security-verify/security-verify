@@ -1,5 +1,46 @@
-"dependencies": {
-  "express": "^4.18.2",
-  "axios": "^1.6.0",
-  "cors": "^2.8.5"
-}
+require('dotenv').config();
+const express = require('express');
+const axios = require('axios');
+const cors = require('cors');
+
+const app = express();
+app.use(cors()); // এটি তোমার অ্যাপের কানেকশন সমস্যা সমাধান করবে
+app.use(express.json());
+
+// গোপন টোকেনটি এখন এনভায়রনমেন্ট ভেরিয়েবল থেকে আসবে
+const cloudToken = process.env.FIREBASE_TOKEN;
+
+app.post('/send', async (req, res) => {
+    const { receiver, amount } = req.body;
+
+    // ইনপুট ভ্যালিডেশন
+    if (!receiver || !amount) {
+        return res.status(400).json({ error: 'Receiver and amount are required' });
+    }
+
+    try {
+        const response = await axios.post('https://fcm.googleapis.com/fcm/send', {
+            to: cloudToken,
+            data: {
+                title: 'New Money Transfer',
+                body: `You received ${amount} from ${receiver}`,
+                receiver: receiver,
+                amount: amount
+            }
+        }, {
+            headers: {
+                'Authorization': `key=${process.env.FCM_SERVER_KEY}`, // সার্ভার কী-টিও নিরাপদ রাখা ভালো
+                'Content-Type': 'application/json'
+            }
+        });
+
+        res.json({ success: true, message: 'Message sent successfully!', data: response.data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to send message', error: error.message });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
